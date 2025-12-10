@@ -3,7 +3,7 @@
 # pip install langchain_text_splitters
 # pip install sentence_transformers
 
-from unsloth import FastModel
+#from unsloth import FastModel
 import os
 import glob
 import chromadb
@@ -120,6 +120,7 @@ def find_chunks(query, collection, n_results, application_id=None):
     result = {}
     
     if application_id:
+        print(f"DEBUG: chunks for: {application_id} extracted")
         result = collection.query(
             query_texts=[query],
             n_results=n_results,
@@ -155,11 +156,12 @@ def prepare_promt(query, n_chunks, application_id=None):
     context = ""
     for i, doc_id in enumerate(result["ids"]):
         context += "\n\n" + result["documents"][i]
-        print(result["metadatas"][i]["application"]) #TODO debug
+        #print(result["metadatas"][i]["application"]) #TODO debug
         
     full_promt = promt.replace("<CONTEXT>", context).replace("<QUERY>", query).replace("\n\n", "\n")
-    #print(f"full_promt LEN: {len(full_promt)}")
-    #print(full_promt)
+    print(f"DEBUG: promt len: {len(full_promt) // 3}")
+    print(full_promt[:500])
+    
     return full_promt
 
 def init_model(model_alias="gemma"):
@@ -268,12 +270,14 @@ def run_slm_many_queries(model, tokenizer, n_chunks, model_alias):
         for j, app_id in enumerate(af, start=1):
             with open(QUESTIONS_PATH, "r", encoding="utf-8") as f:
                 for i, question in enumerate(f, start=1):
+
+                    print(f"app id: {app_id.strip()}")
                     
                     if(model_alias == "gemma"):
-                        generated_text, query, _ = run_gemma_one_query(question.strip(), model, tokenizer, n_chunks, app_id)
+                        generated_text, query, _ = run_gemma_one_query(question.strip(), model, tokenizer, n_chunks, app_id.strip())
                         print(f"gemma QUESTION {i}: {query} \n gemma ANSWER {i}: {generated_text}")
                     elif(model_alias == "phi"): 
-                        generated_text, query, _ = run_phi_one_query(question.strip(), model, tokenizer, n_chunks, app_id)
+                        generated_text, query, _ = run_phi_one_query(question.strip(), model, tokenizer, n_chunks, app_id.strip())
                         print(f"phi QUESTION {i}: {query} \n phi ANSWER {i}: {generated_text}")
                     else:
                         print("Incorrect model selected")
